@@ -5,6 +5,7 @@
 #include "integer.h"
 #include "memory.h"
 #include "meta.h"
+#include "queue.h"
 #include "raii.h"
 #include "range.h"
 #include "result.h"
