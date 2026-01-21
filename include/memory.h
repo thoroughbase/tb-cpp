@@ -191,4 +191,38 @@ private:
     size_t size_ = 0;
 };
 
+// Not suitable for types T which require destructor clean up beyond memory deallocation
+template<typename T>
+struct fixed_size_vector
+{
+public:
+    fixed_size_vector(tb::thread_safe_memory_arena& arena) : arena_(&arena) {}
+
+    auto push_back(const T& element) -> size_t
+    {
+        T* result = arena_->allocate_object<T>(element);
+        return result - data();
+    }
+
+    template<typename... Args>
+    void emplace_back(Args&&... args)
+    {
+        arena_->allocate_object<T>(std::forward<Args>(args)...);
+    }
+
+    auto size() const -> size_t { return arena_->memory_used() / sizeof(T); }
+    auto capacity() const -> size_t { return arena_->capacity() / sizeof(T); }
+    auto data() -> T* { return arena_->data<T>(); }
+
+    auto view() -> std::span<T>
+    {
+        return { data(), size() };
+    }
+
+    auto clear() { arena_->reset(); }
+
+private:
+    tb::thread_safe_memory_arena* arena_;
+};
+
 }
