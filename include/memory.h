@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <new>
+
+#include "range.h"
 
 namespace tb
 {
@@ -24,5 +27,113 @@ constexpr auto with_capacity(size_t capacity) -> with_capacity_t
 {
     return with_capacity_t { capacity };
 }
+
+struct arena_out_of_memory : std::runtime_error
+{
+    arena_out_of_memory() : std::runtime_error("Arena out of memory") {}
+};
+
+constexpr size_t MAX_ALIGN = alignof(std::max_align_t);
+
+// Not suitable for types T which require destructor clean up beyond memory deallocation
+class thread_safe_memory_arena : std::pmr::memory_resource
+{
+public:
+    thread_safe_memory_arena(uint8_t* data, size_t bytes)
+    : data_(data), capacity_(bytes) {}
+
+    template<integer_width_range<uint8_t> Range>
+    thread_safe_memory_arena(Range&& data)
+    : data_(reinterpret_cast<uint8_t*>(data.data())), capacity_(data.size()) {}
+
+    template<typename T, typename... Args>
+    constexpr auto allocate_object(Args&&... args) -> T*
+    {
+        T* object = static_cast<T*>(do_allocate(sizeof(T), alignof(T)));
+        std::construct_at(object, std::forward<Args>(args)...);
+        return object;
+    }
+
+    constexpr void reset() { size_.store(0, std::memory_order_relaxed); }
+
+    constexpr auto memory_used() const -> size_t
+    {
+        return size_.load(std::memory_order_relaxed);
+    }
+
+    constexpr auto capacity() const -> size_t { return capacity_; }
+
+    template<typename T = uint8_t>
+    constexpr auto data() const -> T* { return reinterpret_cast<T*>(data_); };
+
+    template<typename T = uint8_t>
+    constexpr auto end() const -> T* { return reinterpret_cast<T*>(data_ + capacity_); };
+
+    void* do_allocate(size_t bytes, size_t align = MAX_ALIGN) override
+    {
+        if (bytes % MAX_ALIGN != 0)
+            bytes += MAX_ALIGN - (bytes % MAX_ALIGN);
+
+        size_t old_size = size_.fetch_add(bytes, std::memory_order_relaxed);
+        if (old_size + bytes > capacity_)
+            throw arena_out_of_memory {};
+
+        return reinterpret_cast<void*>(data_ + old_size);
+    }
+
+    constexpr void do_deallocate(void* ptr, size_t bytes, size_t align) override {}
+
+    bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
+    {
+        return false;
+    }
+
+private:
+    uint8_t* const data_ = nullptr;
+    std::atomic<size_t> size_ { 0 };
+    const size_t capacity_ = 0;
+};
+
+template<typename T>
+class static_arena_allocator
+{
+public:
+    using value_type = T;
+
+    static_arena_allocator() = default;
+    static_arena_allocator(thread_safe_memory_arena& arena) : allocator_(&arena) {}
+
+    constexpr auto allocate(size_t count) -> T*
+    {
+        return static_cast<T*>(allocator_->do_allocate(sizeof(T) * count));
+    }
+
+    constexpr void deallocate(T* ptr, size_t count)
+    {
+        allocator_->do_deallocate(ptr, sizeof(T) * count, alignof(std::max_align_t));
+    }
+
+private:
+    thread_safe_memory_arena* allocator_ = nullptr;
+};
+
+using arena_string = std::basic_string<char, std::char_traits<char>,
+    static_arena_allocator<char>>;
+
+template<typename T>
+using arena_vector = std::vector<T, static_arena_allocator<T>>;
+
+template<typename T, typename Alloc, typename... Args>
+concept allocator_constructible
+    = std::constructible_from<T, Args..., const Alloc&>
+    && std::uses_allocator_v<T, Alloc>;
+
+template<typename T>
+concept has_allocator = requires (T&& t) {
+    { t.get_allocator() };
+};
+
+template<has_allocator T>
+using allocator_type = decltype(std::declval<T>().get_allocator());
 
 }
