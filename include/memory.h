@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 #include <new>
+#include <span>
 
 #include "range.h"
 
@@ -135,5 +137,58 @@ concept has_allocator = requires (T&& t) {
 
 template<has_allocator T>
 using allocator_type = decltype(std::declval<T>().get_allocator());
+
+template<typename T, size_t EXTENT>
+class dynamically_allocated_array
+{
+public:
+    dynamically_allocated_array() = default;
+
+    template<typename... Args>
+    dynamically_allocated_array(Args&&... args)
+    {
+        for (size_t i = 0; i < EXTENT; ++i)
+            std::construct_at(&(data_.get()[i]), std::forward<Args>(args)...);
+    }
+
+    auto view() -> std::span<T>
+    {
+        return { data_.get(), EXTENT };
+    }
+
+private:
+    std::unique_ptr<T[]> data_ { std::make_unique_for_overwrite<T[]>(EXTENT) };
+};
+
+template<typename T>
+class dynamically_allocated_array<T, std::dynamic_extent>
+{
+public:
+    dynamically_allocated_array() = default;
+
+    template<typename... Args>
+    dynamically_allocated_array(size_t size, Args&&... args) : size_(size)
+    {
+        emplace_all(size_, std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    auto emplace_all(size_t size, Args&&... args)
+    {
+        size_ = size;
+        data_ = std::make_unique_for_overwrite<T[]>(size_);
+        for (size_t i = 0; i < size_; ++i)
+            std::construct_at(&(data_.get()[i]), std::forward<Args>(args)...);
+    }
+
+    auto view() -> std::span<T>
+    {
+        return { data_.get(), size_ };
+    }
+
+private:
+    std::unique_ptr<T[]> data_ = nullptr;
+    size_t size_ = 0;
+};
 
 }
