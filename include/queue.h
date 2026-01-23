@@ -16,11 +16,6 @@ namespace tb
 struct queue_full_error {};
 struct queue_empty_error {};
 
-enum class queue_cell_status : uint8_t
-{
-    EMPTY, FULL
-};
-
 // Not suitable for types T which require destructor clean up beyond memory deallocation
 template<typename T, size_t CAPACITY = 64>
 class mpmc_queue
@@ -33,14 +28,16 @@ public:
     {
         uint64_t old = write_head.load(std::memory_order_relaxed);
         do {
-            if (flags[old % CAPACITY] != queue_cell_status::EMPTY)
+            uint8_t old_seq
+                = sequence_numbers[old % CAPACITY].load(std::memory_order_acquire);
+            if ((old_seq & 0x03) != ((old & CAPACITY) != 0) << 1)
                 return queue_full_error {};
         } while (!write_head.compare_exchange_weak(old, old + 1,
                  std::memory_order_relaxed,
                  std::memory_order_relaxed));
 
         data[old % CAPACITY] = element;
-        flags[old % CAPACITY] = queue_cell_status::FULL;
+        sequence_numbers[old % CAPACITY].fetch_add(1, std::memory_order_release);
         return ok;
     }
 
@@ -52,7 +49,9 @@ public:
         uint64_t old = write_head.load(std::memory_order_relaxed);
         do {
             for (uint64_t i = old; i < old + elements.size(); ++i) {
-                if (flags[i % CAPACITY] != queue_cell_status::EMPTY)
+                uint8_t old_seq
+                    = sequence_numbers[i % CAPACITY].load(std::memory_order_acquire);
+                if ((old_seq & 0x03) != ((old & CAPACITY) != 0) << 1)
                     return queue_full_error {};
             }
         } while (!write_head.compare_exchange_strong(old, old + elements.size(),
@@ -73,7 +72,8 @@ public:
             sizeof(T) * (elements.size() - offset));
 
         for (uint64_t i = old; i < old + elements.size(); ++i)
-            flags[i % CAPACITY] = queue_cell_status::FULL;
+            sequence_numbers[i % CAPACITY].fetch_add(1, std::memory_order_release);
+
         return ok;
     }
 
@@ -81,14 +81,16 @@ public:
     {
         uint64_t old = read_head.load(std::memory_order_relaxed);
         do {
-            if (flags[old % CAPACITY] != queue_cell_status::FULL)
+            uint8_t old_seq
+                = sequence_numbers[old % CAPACITY].load(std::memory_order_acquire);
+            if ((old_seq & 0x03) != (((old & CAPACITY) != 0) << 1) + 1)
                 return queue_empty_error {};
         } while (!read_head.compare_exchange_strong(old, old + 1,
                  std::memory_order_relaxed,
                  std::memory_order_relaxed));
 
         dest = data[old % CAPACITY];
-        flags[old % CAPACITY] = queue_cell_status::EMPTY;
+        sequence_numbers[old % CAPACITY].fetch_add(1, std::memory_order_release);
         return ok;
     }
 
@@ -99,7 +101,7 @@ private:
     alignas(CACHE_LINE_SIZE) std::atomic<uint64_t> read_head { 0 };
 
     alignas(CACHE_LINE_SIZE)
-    std::array<queue_cell_status, CAPACITY> flags { queue_cell_status::EMPTY };
+    std::array<std::atomic<uint8_t>, CAPACITY> sequence_numbers {};
     std::array<T, CAPACITY> data {};
 };
 
