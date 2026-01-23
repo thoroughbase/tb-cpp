@@ -54,7 +54,7 @@ public:
                 if ((old_seq & 0x03) != ((old & CAPACITY) != 0) << 1)
                     return queue_full_error {};
             }
-        } while (!write_head.compare_exchange_strong(old, old + elements.size(),
+        } while (!write_head.compare_exchange_weak(old, old + elements.size(),
                  std::memory_order_relaxed,
                  std::memory_order_relaxed));
 
@@ -85,7 +85,7 @@ public:
                 = sequence_numbers[old % CAPACITY].load(std::memory_order_acquire);
             if ((old_seq & 0x03) != (((old & CAPACITY) != 0) << 1) + 1)
                 return queue_empty_error {};
-        } while (!read_head.compare_exchange_strong(old, old + 1,
+        } while (!read_head.compare_exchange_weak(old, old + 1,
                  std::memory_order_relaxed,
                  std::memory_order_relaxed));
 
