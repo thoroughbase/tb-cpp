@@ -51,7 +51,7 @@ public:
             for (uint64_t i = old; i < old + elements.size(); ++i) {
                 uint8_t old_seq
                     = sequence_numbers[i % CAPACITY].load(std::memory_order_acquire);
-                if ((old_seq & 0x03) != ((old & CAPACITY) != 0) << 1)
+                if ((old_seq & 0x03) != ((i & CAPACITY) != 0) << 1)
                     return queue_full_error {};
             }
         } while (!write_head.compare_exchange_weak(old, old + elements.size(),
