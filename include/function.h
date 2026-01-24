@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -105,7 +106,7 @@ public:
     }
 
 private:
-    alignas(SIZE) std::array<uint8_t, SIZE> lambda {};
+    alignas(std::max_align_t) std::array<uint8_t, SIZE> lambda {};
     bool has_target = false;
 };
 
