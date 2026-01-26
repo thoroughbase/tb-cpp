@@ -29,12 +29,14 @@ public:
         uint64_t old = write_head.load(std::memory_order_relaxed);
         do {
             uint8_t old_seq
-                = sequence_numbers[old % CAPACITY].load(std::memory_order_acquire);
+                = sequence_numbers[old % CAPACITY].load(std::memory_order_relaxed);
             if ((old_seq & 0x03) != ((old & CAPACITY) != 0) << 1)
                 return queue_full_error {};
         } while (!write_head.compare_exchange_weak(old, old + 1,
                  std::memory_order_relaxed,
                  std::memory_order_relaxed));
+
+        std::atomic_thread_fence(std::memory_order_acquire);
 
         data[old % CAPACITY] = element;
         sequence_numbers[old % CAPACITY].fetch_add(1, std::memory_order_release);
@@ -50,13 +52,15 @@ public:
         do {
             for (uint64_t i = old; i < old + elements.size(); ++i) {
                 uint8_t old_seq
-                    = sequence_numbers[i % CAPACITY].load(std::memory_order_acquire);
+                    = sequence_numbers[i % CAPACITY].load(std::memory_order_relaxed);
                 if ((old_seq & 0x03) != ((i & CAPACITY) != 0) << 1)
                     return queue_full_error {};
             }
         } while (!write_head.compare_exchange_weak(old, old + elements.size(),
                  std::memory_order_relaxed,
                  std::memory_order_relaxed));
+
+        std::atomic_thread_fence(std::memory_order_acquire);
 
         uint64_t start = old % CAPACITY;
         uint64_t end = (old + elements.size()) % CAPACITY;
@@ -72,8 +76,9 @@ public:
             sizeof(T) * (elements.size() - offset));
 
         for (uint64_t i = old; i < old + elements.size(); ++i)
-            sequence_numbers[i % CAPACITY].fetch_add(1, std::memory_order_release);
+            sequence_numbers[i % CAPACITY].fetch_add(1, std::memory_order_relaxed);
 
+        std::atomic_thread_fence(std::memory_order_release);
         return ok;
     }
 
@@ -82,12 +87,14 @@ public:
         uint64_t old = read_head.load(std::memory_order_relaxed);
         do {
             uint8_t old_seq
-                = sequence_numbers[old % CAPACITY].load(std::memory_order_acquire);
+                = sequence_numbers[old % CAPACITY].load(std::memory_order_relaxed);
             if ((old_seq & 0x03) != (((old & CAPACITY) != 0) << 1) + 1)
                 return queue_empty_error {};
         } while (!read_head.compare_exchange_weak(old, old + 1,
                  std::memory_order_relaxed,
                  std::memory_order_relaxed));
+
+        std::atomic_thread_fence(std::memory_order_acquire);
 
         dest = data[old % CAPACITY];
         sequence_numbers[old % CAPACITY].fetch_add(1, std::memory_order_release);
