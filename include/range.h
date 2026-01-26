@@ -25,4 +25,11 @@ template<typename Range, typename Type>
 concept integer_width_range = std::integral<std::ranges::range_value_t<Range>>
     && sizeof(std::ranges::range_value_t<Range>) == sizeof(Type);
 
+template<typename Range, typename Type>
+concept contiguous_integer_width_range = integer_width_range<Range, Type>
+    && std::ranges::contiguous_range<Range>;
+
+template<typename Range>
+concept contiguous_byte_range = contiguous_integer_width_range<Range, uint8_t>;
+
 }
