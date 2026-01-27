@@ -151,7 +151,7 @@ public:
             std::construct_at(&(data_.get()[i]), std::forward<Args>(args)...);
     }
 
-    auto view() -> std::span<T>
+    auto view() const -> std::span<T>
     {
         return { data_.get(), EXTENT };
     }
@@ -181,7 +181,7 @@ public:
             std::construct_at(&(data_.get()[i]), std::forward<Args>(args)...);
     }
 
-    auto view() -> std::span<T>
+    auto view() const -> std::span<T>
     {
         return { data_.get(), size_ };
     }
