@@ -212,9 +212,9 @@ public:
 
     auto size() const -> size_t { return arena_->memory_used() / sizeof(T); }
     auto capacity() const -> size_t { return arena_->capacity() / sizeof(T); }
-    auto data() -> T* { return arena_->data<T>(); }
+    auto data() const -> T* { return arena_->data<T>(); }
 
-    auto view() -> std::span<T>
+    auto view() const -> std::span<T>
     {
         return { data(), size() };
     }
