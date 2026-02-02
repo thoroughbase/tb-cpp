@@ -32,4 +32,8 @@ concept contiguous_integer_width_range = integer_width_range<Range, Type>
 template<typename Range>
 concept contiguous_byte_range = contiguous_integer_width_range<Range, uint8_t>;
 
+template<typename Range>
+concept temporary_non_view = !std::ranges::view<std::remove_cvref_t<Range>>
+    && std::is_rvalue_reference_v<Range>;
+
 }
