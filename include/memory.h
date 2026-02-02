@@ -44,9 +44,14 @@ public:
     thread_safe_memory_arena(uint8_t* data, size_t bytes)
     : data_(data), capacity_(bytes) {}
 
-    template<integer_width_range<uint8_t> Range>
-    thread_safe_memory_arena(Range&& data)
-    : data_(reinterpret_cast<uint8_t*>(data.data())), capacity_(data.size()) {}
+    thread_safe_memory_arena(contiguous_byte_range auto&& data)
+    : data_(reinterpret_cast<uint8_t*>(std::data(data))), capacity_(std::size(data))
+    {
+        static_assert(
+            !temporary_non_view<decltype(data)>,
+            "Cannot create an arena with a temporary owning object!"
+        );
+    }
 
     template<typename T, typename... Args>
     constexpr auto allocate_object(Args&&... args) -> T*
