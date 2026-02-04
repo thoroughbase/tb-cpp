@@ -73,8 +73,12 @@ public:
     template<typename T = uint8_t>
     constexpr auto data() const -> T* { return reinterpret_cast<T*>(data_); };
 
-    template<typename T = uint8_t>
-    constexpr auto end() const -> T* { return reinterpret_cast<T*>(data_ + capacity_); };
+    constexpr auto view() const -> std::span<uint8_t>
+    {
+        return { data_, capacity_ };
+    }
+
+    constexpr auto end() const { return view().end(); }
 
     void* do_allocate(size_t bytes, size_t align = MAX_ALIGN) override
     {
