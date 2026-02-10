@@ -82,21 +82,12 @@ struct enum_selection
 
     constexpr enum_selection() : _enum_field(0) {}
 
-    constexpr static IntegerType to_int(auto e)
+    template<tb::either<IntegerType, EnumType, int, enum_selection<EnumType>> T>
+    constexpr static IntegerType to_int(T e)
     {
-        if constexpr (std::is_same_v<decltype(e), IntegerType>)
-            return e;
-        else if constexpr (std::is_same_v<decltype(e), EnumType>)
-            return static_cast<IntegerType>(e);
-        else if constexpr (std::is_same_v<decltype(e), int>) // integer promotion
-            return static_cast<IntegerType>(e);
-        else if constexpr (std::is_same_v<decltype(e), enum_selection<EnumType>>)
+        if constexpr (std::same_as<T, enum_selection<EnumType>>)
             return e._enum_field;
-        else {
-            static_assert(detail::dependent_false<decltype(e)> {},
-                "Incompatible type for enum_selection");
-            return -1;
-        }
+        return static_cast<IntegerType>(e);
     }
 
     constexpr enum_selection(auto e) : _enum_field(to_int(e)) {}
