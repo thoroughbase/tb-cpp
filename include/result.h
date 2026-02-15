@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 namespace tb
 {
 
@@ -142,5 +144,26 @@ public:
 
 template<typename E>
 using error = result<void, E>;
+
+template<typename T>
+constexpr auto get_unchecked(const std::optional<T>& opt) -> const T&
+{
+    return *opt;
+}
+
+template<typename T>
+constexpr auto get_unchecked(std::optional<T>&& opt) = delete;
+
+template<typename T>
+constexpr auto copy_unchecked(const std::optional<T>& opt) -> T
+{
+    return *opt;
+}
+
+template<typename T>
+constexpr auto get_mut_unchecked(std::optional<T>& opt) -> T&
+{
+    return *opt;
+}
 
 }
