@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstring>
 #include <memory>
+#include <new>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -90,8 +91,10 @@ public:
     {
         if (!has_target) throw bad_function_call {};
 
-        auto* base_ptr = reinterpret_cast<detail::base_invoker<R, A...>*>(
-            lambda.data()
+        auto* base_ptr = std::launder(
+            reinterpret_cast<detail::base_invoker<R, A...>*>(
+                lambda.data()
+            )
         );
 
         if constexpr (std::same_as<R, void>)

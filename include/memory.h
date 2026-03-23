@@ -57,8 +57,7 @@ public:
     constexpr auto allocate_object(Args&&... args) -> T*
     {
         T* object = static_cast<T*>(do_allocate(sizeof(T), alignof(T)));
-        std::construct_at(object, std::forward<Args>(args)...);
-        return object;
+        return std::construct_at(object, std::forward<Args>(args)...);
     }
 
     constexpr void reset() { size_.store(0, std::memory_order_relaxed); }
@@ -89,7 +88,7 @@ public:
         if (old_size + bytes > capacity_)
             throw arena_out_of_memory {};
 
-        return reinterpret_cast<void*>(data_ + old_size);
+        return static_cast<void*>(data_ + old_size);
     }
 
     constexpr void do_deallocate(void* ptr, size_t bytes, size_t align) override {}
