@@ -36,4 +36,8 @@ template<typename Range>
 concept temporary_non_view = !std::ranges::view<std::remove_cvref_t<Range>>
     && std::is_rvalue_reference_v<Range>;
 
+template<typename Range, typename Type>
+concept typed_range = std::ranges::range<Range>
+    && std::same_as<std::ranges::range_value_t<Range>, Type>;
+
 }
