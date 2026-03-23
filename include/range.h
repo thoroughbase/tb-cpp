@@ -21,8 +21,11 @@ constexpr auto operator|(View&& view, range_to_t<T>&& container)
     return T { view.begin(), view.end() };
 }
 
+template<typename T>
+concept integral_or_enum = std::integral<T> || std::is_enum_v<T>;
+
 template<typename Range, typename Type>
-concept integer_width_range = std::integral<std::ranges::range_value_t<Range>>
+concept integer_width_range = integral_or_enum<std::ranges::range_value_t<Range>>
     && sizeof(std::ranges::range_value_t<Range>) == sizeof(Type);
 
 template<typename Range, typename Type>
