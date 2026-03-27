@@ -145,6 +145,19 @@ public:
 template<typename E>
 using error = result<void, E>;
 
+template<>
+struct result<void, void>
+{
+    constexpr result(detail::ok_t) {}
+
+    constexpr bool is_error() const { return false; }
+    constexpr bool is_ok() const { return true; }
+
+    constexpr void ignore_error() const {}
+};
+
+using no_fail = result<void, void>;
+
 template<typename T>
 constexpr auto get_unchecked(const std::optional<T>& opt) -> const T&
 {
