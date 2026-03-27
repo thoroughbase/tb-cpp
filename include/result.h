@@ -19,10 +19,10 @@ struct result_internal
     };
     const bool is_err;
 
-    result_internal(const R& value) : value(value), is_err(false) {}
-    result_internal(R&& value) : value(std::move(value)), is_err(false) {}
-    result_internal(const E& err) : err(err), is_err(true) {}
-    ~result_internal() { if (!is_err) value.~R(); }
+    constexpr result_internal(const R& value) : value(value), is_err(false) {}
+    constexpr result_internal(R&& value) : value(std::move(value)), is_err(false) {}
+    constexpr result_internal(const E& err) : err(err), is_err(true) {}
+    constexpr ~result_internal() { if (!is_err) value.~R(); }
 };
 
 template<typename E>
@@ -31,8 +31,8 @@ struct result_internal<void, E>
     union { E err; };
     const bool is_err;
 
-    result_internal(ok_t) : is_err(false) {}
-    result_internal(const E& err) : err(err), is_err(true) {}
+    constexpr result_internal(ok_t) : is_err(false) {}
+    constexpr result_internal(const E& err) : err(err), is_err(true) {}
 };
 
 template<typename R, typename E> requires std::is_empty_v<E>
@@ -41,10 +41,10 @@ struct result_internal<R, E>
     union { R value; };
     const bool is_err;
 
-    result_internal(const R& value) : value(value), is_err(false) {}
-    result_internal(R&& value) : value(std::move(value)), is_err(false) {}
-    result_internal(const E&) : is_err(true) {}
-    ~result_internal() { if (!is_err) value.~R(); }
+    constexpr result_internal(const R& value) : value(value), is_err(false) {}
+    constexpr result_internal(R&& value) : value(std::move(value)), is_err(false) {}
+    constexpr result_internal(const E&) : is_err(true) {}
+    constexpr ~result_internal() { if (!is_err) value.~R(); }
 };
 
 template<typename E> requires std::is_empty_v<E>
@@ -52,8 +52,8 @@ struct result_internal<void, E>
 {
     const bool is_err;
 
-    result_internal(ok_t) : is_err(false) {}
-    result_internal(const E&) : is_err(true) {}
+    constexpr result_internal(ok_t) : is_err(false) {}
+    constexpr result_internal(const E&) : is_err(true) {}
 };
 
 }
@@ -70,26 +70,26 @@ public:
 
     // Success/value initialisation
     template<typename T = R> requires (std::is_void_v<T> && std::is_same_v<T, R>)
-    result(detail::ok_t) : members { ok } {}
+    constexpr result(detail::ok_t) : members { ok } {}
 
     template<typename T = R> requires (!std::is_void_v<T> && std::is_same_v<T, R>)
-    result(const T& value) : members { value } {}
+    constexpr result(const T& value) : members { value } {}
 
     template<typename T = R> requires (!std::is_void_v<T> && std::is_same_v<T, R>)
-    result(T&& value) : members { std::move(value) } {}
+    constexpr result(T&& value) : members { std::move(value) } {}
 
     // Error initialisation
     template<typename T = E> requires (!std::is_empty_v<T> && std::is_same_v<T, E>)
-    result(const T& err) : members { err } {}
+    constexpr result(const T& err) : members { err } {}
 
     template<typename T = E> requires (std::is_empty_v<T> && std::is_same_v<T, E>)
-    result(const T& err) : members { err } {}
+    constexpr result(const T& err) : members { err } {}
 
-    bool is_error() const { return members.is_err; }
-    bool is_ok() const { return !members.is_err; }
+    constexpr bool is_error() const { return members.is_err; }
+    constexpr bool is_ok() const { return !members.is_err; }
 
     template<typename Callable>
-    const result& if_ok(Callable&& cb) const
+    constexpr const result& if_ok(Callable&& cb) const
     {
         if constexpr (std::is_void_v<R>) {
             if (!members.is_err) cb();
@@ -100,7 +100,7 @@ public:
     }
 
     template<typename Callable>
-    result& if_ok_mut(Callable&& cb)
+    constexpr result& if_ok_mut(Callable&& cb)
     {
         if constexpr (std::is_void_v<R>) {
             if (!members.is_err) cb();
@@ -111,7 +111,7 @@ public:
     }
 
     template<typename Callable>
-    const result& if_err(Callable&& cb) const
+    constexpr const result& if_err(Callable&& cb) const
     {
         if constexpr (std::is_empty_v<E>) {
             if (members.is_err) cb(E {});
@@ -122,24 +122,24 @@ public:
     }
 
     template<typename T = R> requires (!std::is_void_v<T>)
-    const T& get_or(T&& alternative) const
+    constexpr const T& get_or(T&& alternative) const
     {
         return members.is_err ? alternative : members.value;
     }
 
     template<typename T = R> requires (!std::is_same_v<T, void>)
-    const T& get_unchecked() const { return members.value; }
+    constexpr const T& get_unchecked() const { return members.value; }
 
     template<typename T = R> requires (!std::is_same_v<T, void>)
-    T& get_mut_unchecked() { return members.value; }
+    constexpr T& get_mut_unchecked() { return members.value; }
 
-    auto get_error() const
+    constexpr auto get_error() const
     {
         if constexpr (std::is_empty_v<E>) return E {};
         else return members.err;
     }
 
-    void ignore_error() const {}
+    constexpr void ignore_error() const {}
 };
 
 template<typename E>
