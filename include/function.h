@@ -109,7 +109,7 @@ public:
     }
 
 private:
-    alignas(std::max_align_t) std::array<uint8_t, SIZE> lambda {};
+    alignas(std::max_align_t) std::array<std::byte, SIZE> lambda {};
     bool has_target = false;
 };
 

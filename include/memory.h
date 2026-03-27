@@ -41,11 +41,11 @@ constexpr size_t MAX_ALIGN = alignof(std::max_align_t);
 class thread_safe_memory_arena : std::pmr::memory_resource
 {
 public:
-    thread_safe_memory_arena(uint8_t* data, size_t bytes)
-    : data_(data), capacity_(bytes) {}
+    thread_safe_memory_arena(auto* data, size_t bytes)
+    : data_(reinterpret_cast<std::byte*>(data)), capacity_(bytes) {}
 
     thread_safe_memory_arena(contiguous_byte_range auto&& data)
-    : data_(reinterpret_cast<uint8_t*>(std::data(data))), capacity_(std::size(data))
+    : data_(reinterpret_cast<std::byte*>(std::data(data))), capacity_(std::size(data))
     {
         static_assert(
             !temporary_non_view<decltype(data)>,
@@ -69,10 +69,10 @@ public:
 
     constexpr auto capacity() const -> size_t { return capacity_; }
 
-    template<typename T = uint8_t>
+    template<typename T = std::byte>
     constexpr auto data() const -> T* { return reinterpret_cast<T*>(data_); };
 
-    constexpr auto view() const -> std::span<uint8_t>
+    constexpr auto view() const -> std::span<std::byte>
     {
         return { data_, capacity_ };
     }
@@ -99,7 +99,7 @@ public:
     }
 
 private:
-    uint8_t* const data_ = nullptr;
+    std::byte* const data_ = nullptr;
     std::atomic<size_t> size_ { 0 };
     const size_t capacity_ = 0;
 };
