@@ -164,6 +164,16 @@ public:
         return { data_.get(), EXTENT };
     }
 
+    auto begin() const
+    {
+        return view().begin();
+    }
+
+    auto end() const
+    {
+        return view().end();
+    }
+
 private:
     std::unique_ptr<T[]> data_ { std::make_unique_for_overwrite<T[]>(EXTENT) };
 };
@@ -192,6 +202,16 @@ public:
     auto view() const -> std::span<T>
     {
         return { data_.get(), size_ };
+    }
+
+    auto begin() const
+    {
+        return view().begin();
+    }
+
+    auto end() const
+    {
+        return view().end();
     }
 
 private:
