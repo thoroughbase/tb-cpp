@@ -140,6 +140,15 @@ public:
     }
 
     constexpr void ignore_error() const {}
+
+    template<typename T = R> requires (!std::is_same_v<T, void>)
+    constexpr auto try_move(T& destination) -> result&
+    {
+        if (!members.is_err)
+            destination = std::move(members.value);
+
+        return *this;
+    }
 };
 
 template<typename E>
