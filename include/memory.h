@@ -135,6 +135,11 @@ using arena_string = std::basic_string<char, std::char_traits<char>,
 template<typename T>
 using arena_vector = std::vector<T, static_arena_allocator<T>>;
 
+template<typename Key, typename T, typename Hash = std::hash<Key>,
+    typename KeyEqual = std::equal_to<Key>>
+using arena_unordered_map = std::unordered_map<Key, T, Hash, KeyEqual,
+    tb::static_arena_allocator<std::pair<const Key, T>>>;
+
 template<typename T, typename Alloc, typename... Args>
 concept allocator_constructible
     = std::constructible_from<T, Args..., const Alloc&>
