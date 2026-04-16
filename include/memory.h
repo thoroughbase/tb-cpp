@@ -105,13 +105,18 @@ private:
 };
 
 template<typename T>
-class static_arena_allocator
+struct static_arena_allocator
 {
-public:
     using value_type = T;
+
+    thread_safe_memory_arena* allocator_ = nullptr;
 
     static_arena_allocator() = default;
     static_arena_allocator(thread_safe_memory_arena& arena) : allocator_(&arena) {}
+
+    template<typename U>
+    static_arena_allocator(const static_arena_allocator<U>& other)
+    : allocator_(other.allocator_) {}
 
     constexpr auto allocate(size_t count) -> T*
     {
@@ -122,9 +127,6 @@ public:
     {
         allocator_->do_deallocate(ptr, sizeof(T) * count, alignof(std::max_align_t));
     }
-
-private:
-    thread_safe_memory_arena* allocator_ = nullptr;
 };
 
 using arena_string = std::basic_string<char, std::char_traits<char>,
