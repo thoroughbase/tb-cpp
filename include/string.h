@@ -129,5 +129,8 @@ constexpr auto try_match(std::string_view string,
     };
 }
 
+template<typename T>
+concept string_view_like = std::constructible_from<std::string_view, T>;
+
 }
 
