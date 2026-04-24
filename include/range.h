@@ -43,4 +43,17 @@ template<typename Range, typename Type>
 concept typed_range = std::ranges::range<Range>
     && std::same_as<std::ranges::range_value_t<Range>, Type>;
 
+template<std::ranges::range Range>
+struct pair_range_types
+{
+    using key = typename std::tuple_element<0, std::ranges::range_value_t<Range>>::type;
+    using value = typename std::tuple_element<1, std::ranges::range_value_t<Range>>::type;
+};
+
+template<typename T>
+using pair_range_key_t = typename pair_range_types<T>::key;
+
+template<typename T>
+using pair_range_value_t = typename pair_range_types<T>::value;
+
 }
