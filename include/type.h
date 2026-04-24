@@ -47,9 +47,6 @@ struct tb::type_set<allocator_aware, struct default_allocator>
         std::allocator<std::pair<const Key, T>>>;
 };
 
-template<typename TypeSet>
-struct K;
-
 template<>
 struct tb::type_set<allocator_aware, struct arena_allocator>
 {
