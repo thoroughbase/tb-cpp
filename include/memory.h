@@ -127,6 +127,16 @@ struct static_arena_allocator
     {
         allocator_->do_deallocate(ptr, sizeof(T) * count, alignof(std::max_align_t));
     }
+
+    constexpr auto operator==(const static_arena_allocator<T>& other) -> bool
+    {
+        return other.allocator_ == allocator_;
+    }
+
+    constexpr auto operator==(const auto&) -> bool
+    {
+        return false;
+    }
 };
 
 using arena_string = std::basic_string<char, std::char_traits<char>,
