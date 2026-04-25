@@ -41,10 +41,8 @@ struct tb::type_set<allocator_aware, struct default_allocator>
     template<typename T>
     using vector = std::vector<T>;
 
-    template<typename Key, typename T, typename Hash = std::hash<Key>,
-        typename KeyEqual = std::equal_to<Key>>
-    using unordered_map = std::unordered_map<Key, T, Hash, KeyEqual,
-        std::allocator<std::pair<const Key, T>>>;
+    template<typename Key, typename T>
+    using unordered_map = std::unordered_map<Key, T>;
 };
 
 template<>
@@ -57,8 +55,7 @@ struct tb::type_set<allocator_aware, struct arena_allocator>
     template<typename T>
     using vector = tb::arena_vector<T>;
 
-    template<typename Key, typename T, typename Hash = std::hash<Key>,
-        typename KeyEqual = std::equal_to<Key>>
+    template<typename Key, typename T>
     using unordered_map = tb::arena_unordered_map<Key, T>;
 };
 
