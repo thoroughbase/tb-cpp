@@ -31,4 +31,13 @@ constexpr void visit_tuple(Tuple& tuple, size_t index, Callable&& fn)
     detail::visit_tuple_impl<std::tuple_size_v<Tuple>>(tuple, index, fn);
 }
 
+template<typename T>
+constexpr bool is_tuple_like = false;
+
+template<typename... Ts>
+constexpr bool is_tuple_like<std::tuple<Ts...>> = true;
+
+template<typename... Ts>
+constexpr bool is_tuple_like<std::pair<Ts...>> = true;
+
 }
