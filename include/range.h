@@ -3,6 +3,8 @@
 #include <ranges>
 #include <span>
 
+#include "tuple.h"
+
 namespace tb
 {
 
@@ -43,7 +45,15 @@ template<typename Range, typename Type>
 concept typed_range = std::ranges::range<Range>
     && std::same_as<std::ranges::range_value_t<Range>, Type>;
 
-template<std::ranges::range Range>
+template<typename Range>
+concept tuple_range = std::ranges::range<Range>
+    && is_tuple_like<std::ranges::range_value_t<Range>>;
+
+template<typename Range>
+concept pair_range = tuple_range<Range>
+    && std::tuple_size<std::ranges::range_value_t<Range>>::value == 2;
+
+template<pair_range Range>
 struct pair_range_types
 {
     using key = typename std::tuple_element<0, std::ranges::range_value_t<Range>>::type;
