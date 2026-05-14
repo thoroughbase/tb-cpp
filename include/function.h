@@ -87,7 +87,8 @@ public:
         assign(std::forward<Callable>(fn));
     }
 
-    auto operator()(A... a) -> R
+    template<typename... Args>
+    auto operator()(Args&&... a) -> R
     {
         if (!has_target) throw bad_function_call {};
 
@@ -98,9 +99,9 @@ public:
         );
 
         if constexpr (std::same_as<R, void>)
-            base_ptr->invoke(std::forward<A>(a)...);
+            base_ptr->invoke(std::forward<Args>(a)...);
         else
-            return base_ptr->invoke(std::forward<A>(a)...);
+            return base_ptr->invoke(std::forward<Args>(a)...);
     }
 
     void reset()
