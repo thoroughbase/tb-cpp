@@ -68,28 +68,16 @@ private:
 public:
     result() = delete;
 
-    // Success/value initialisation
-    template<typename T = R> requires (std::is_void_v<T> && std::is_same_v<T, R>)
-    constexpr result(detail::ok_t) : members { ok } {}
+    constexpr result(detail::ok_t) requires std::is_void_v<R> : members { ok } {}
 
-    template<typename T = R> requires (!std::is_void_v<T> && std::is_same_v<T, R>)
-    constexpr result(const T& value) : members { value } {}
+    template<typename T>
+    constexpr result(T&& value) : members { std::forward<T>(value) } {}
 
-    template<typename T = R> requires (!std::is_void_v<T> && std::is_same_v<T, R>)
-    constexpr result(T&& value) : members { std::move(value) } {}
-
-    // Error initialisation
-    template<typename T = E> requires (!std::is_empty_v<T> && std::is_same_v<T, E>)
-    constexpr result(const T& err) : members { err } {}
-
-    template<typename T = E> requires (std::is_empty_v<T> && std::is_same_v<T, E>)
-    constexpr result(const T& err) : members { err } {}
-
-    constexpr bool is_error() const { return members.is_err; }
-    constexpr bool is_ok() const { return !members.is_err; }
+    constexpr auto is_error() const -> bool { return members.is_err; }
+    constexpr auto is_ok() const -> bool { return !members.is_err; }
 
     template<typename Callable>
-    constexpr const result& if_ok(Callable&& cb) const
+    constexpr auto if_ok(Callable&& cb) const -> const result&
     {
         if constexpr (std::is_void_v<R>) {
             if (!members.is_err) cb();
@@ -100,7 +88,7 @@ public:
     }
 
     template<typename Callable>
-    constexpr result& if_ok_mut(Callable&& cb)
+    constexpr auto if_ok_mut(Callable&& cb) -> result&
     {
         if constexpr (std::is_void_v<R>) {
             if (!members.is_err) cb();
@@ -111,7 +99,7 @@ public:
     }
 
     template<typename Callable>
-    constexpr const result& if_err(Callable&& cb) const
+    constexpr auto if_err(Callable&& cb) const -> const result&
     {
         if constexpr (std::is_empty_v<E>) {
             if (members.is_err) cb(E {});
@@ -121,17 +109,23 @@ public:
         return *this;
     }
 
-    template<typename T = R> requires (!std::is_void_v<T>)
-    constexpr const T& get_or(T&& alternative) const
+    constexpr auto get_or(auto&& alternative) const -> R requires (!std::is_void_v<R>)
     {
-        return members.is_err ? alternative : members.value;
+        if (members.is_err)
+            return std::forward<R>(alternative);
+
+        return members.value;
     }
 
-    template<typename T = R> requires (!std::is_same_v<T, void>)
-    constexpr const T& get_unchecked() const { return members.value; }
+    constexpr auto get_unchecked() const -> const auto& requires (!std::is_void_v<R>)
+    {
+        return members.value;
+    }
 
-    template<typename T = R> requires (!std::is_same_v<T, void>)
-    constexpr T& get_mut_unchecked() { return members.value; }
+    constexpr auto get_mut_unchecked() -> auto& requires (!std::is_void_v<R>)
+    {
+        return members.value;
+    }
 
     constexpr auto get_error() const
     {
@@ -141,8 +135,7 @@ public:
 
     constexpr void ignore_error() const {}
 
-    template<typename T = R> requires (!std::is_same_v<T, void>)
-    constexpr auto try_move(T& destination) -> result&
+    constexpr auto try_move(auto& destination) -> result& requires (!std::is_void_v<R>)
     {
         if (!members.is_err)
             destination = std::move(members.value);
