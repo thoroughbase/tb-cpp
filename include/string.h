@@ -10,7 +10,7 @@ inline void constexpr_static_error(std::string_view) {}
 
 constexpr std::string_view MATCH_PLACEHOLDER = "{}";
 
-static constexpr size_t count_placeholders(std::string_view view)
+static constexpr auto count_placeholders(std::string_view view) -> size_t
 {
     size_t placeholder_count = 0;
     size_t pos = 0;
@@ -45,10 +45,10 @@ struct match_result
 };
 
 template<typename T>
-std::optional<match_result<T>> try_match_single(std::string_view);
+auto try_match_single(std::string_view) -> std::optional<match_result<T>>;
 
 template<typename T> requires std::unsigned_integral<T>
-constexpr std::optional<match_result<T>> try_match_single(std::string_view s)
+constexpr auto try_match_single(std::string_view s) ->  std::optional<match_result<T>>
 {
     const char* end = s.data();
     match_result<T> result {
@@ -66,7 +66,7 @@ constexpr std::optional<match_result<T>> try_match_single(std::string_view s)
 }
 
 template<typename T> requires std::floating_point<T>
-constexpr std::optional<match_result<T>> try_match_single(std::string_view s)
+constexpr auto try_match_single(std::string_view s) -> std::optional<match_result<T>>
 {
     const char* end = s.data();
     match_result<T> result {

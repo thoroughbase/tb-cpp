@@ -61,9 +61,12 @@ struct enum_selection
             }
         }
 
-        constexpr EnumType operator*() { return static_cast<EnumType>(1 << _bit); }
+        constexpr auto operator*() -> EnumType
+        {
+            return static_cast<EnumType>(1 << _bit);
+        }
 
-        constexpr bool operator!=(const iterator& other)
+        constexpr auto operator!=(const iterator& other) -> bool
         {
             return other._underlying != _underlying;
         }
@@ -83,7 +86,7 @@ struct enum_selection
     constexpr enum_selection() : _enum_field(0) {}
 
     template<tb::either<IntegerType, EnumType, int, enum_selection<EnumType>> T>
-    constexpr static IntegerType to_int(T e)
+    constexpr static auto to_int(T e) -> IntegerType
     {
         if constexpr (std::same_as<T, enum_selection<EnumType>>)
             return e._enum_field;
@@ -92,53 +95,65 @@ struct enum_selection
 
     constexpr enum_selection(auto e) : _enum_field(to_int(e)) {}
 
-    constexpr enum_selection& operator|=(auto e)
+    constexpr auto operator|=(auto e) -> enum_selection&
     {
         _enum_field |= to_int(e);
         return *this;
     }
 
-    constexpr enum_selection operator&(auto e) const { return _enum_field & to_int(e); }
+    constexpr auto operator&(auto e) const -> enum_selection
+    {
+        return _enum_field & to_int(e);
+    }
 
-    constexpr enum_selection operator|(auto e) const { return _enum_field | to_int(e); }
+    constexpr auto operator|(auto e) const -> enum_selection
+    {
+        return _enum_field | to_int(e);
+    }
 
-    constexpr enum_selection operator^(auto e) const { return _enum_field ^ to_int(e); }
-
-    constexpr bool has(auto e) const { return (_enum_field & to_int(e)) == to_int(e); }
-
-    constexpr enum_selection with_toggled(auto e) const
+    constexpr auto operator^(auto e) const -> enum_selection
     {
         return _enum_field ^ to_int(e);
     }
 
-    constexpr enum_selection without(auto e) const
+    constexpr auto has(auto e) const -> bool
+    {
+        return (_enum_field & to_int(e)) == to_int(e);
+    }
+
+    constexpr auto with_toggled(auto e) const -> enum_selection
+    {
+        return _enum_field ^ to_int(e);
+    }
+
+    constexpr auto without(auto e) const -> enum_selection
     {
         return (_enum_field | to_int(e)) ^ to_int(e);
     }
 
-    constexpr enum_selection& add(auto e)
+    constexpr auto add(auto e) -> enum_selection&
     {
         _enum_field |= to_int(e);
         return *this;
     }
 
-    constexpr enum_selection& toggle(auto e)
+    constexpr auto toggle(auto e) -> enum_selection&
     {
         _enum_field ^= to_int(e);
         return *this;
     }
 
-    constexpr bool operator==(auto e) { return _enum_field == to_int(e); }
+    constexpr auto operator==(auto e) -> bool { return _enum_field == to_int(e); }
 
-    constexpr bool operator!=(auto e) { return _enum_field != to_int(e); }
+    constexpr auto operator!=(auto e) -> bool { return _enum_field != to_int(e); }
 
     constexpr operator bool() const { return _enum_field; }
 
-    constexpr IntegerType const as_int() { return _enum_field; }
+    constexpr auto as_int() -> IntegerType { return _enum_field; }
 
-    constexpr iterator begin() const { return iterator { _enum_field }; }
+    constexpr auto begin() const -> iterator { return iterator { _enum_field }; }
 
-    constexpr iterator end() const { return iterator { 0 }; }
+    constexpr auto end() const -> iterator { return iterator { 0 }; }
 
     IntegerType _enum_field;
 };
@@ -146,7 +161,7 @@ struct enum_selection
 } // namespace tb
 
 template<typename E> requires tb::Enum<E> && (!tb::detail::enum_selection_disabled<E>)
-constexpr tb::enum_selection<E> operator|(E a, E b)
+constexpr auto operator|(E a, E b) -> tb::enum_selection<E>
 {
     return tb::enum_selection<E>::to_int(a) | tb::enum_selection<E>::to_int(b);
 }

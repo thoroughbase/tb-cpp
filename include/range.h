@@ -9,18 +9,18 @@ namespace tb
 {
 
 template<typename T, size_t N>
-constexpr auto make_span(T (&&array)[N]) { return std::span<T>(array, N); }
+constexpr auto make_span(T (&&array)[N]) -> std::span<T> { return { array, N }; }
 
 template<typename T>
 struct range_to_t {};
 
 template<typename T>
-constexpr auto range_to() { return range_to_t<T> {}; }
+constexpr auto range_to() -> range_to_t<T> { return {}; }
 
 template<std::ranges::view View, typename T>
-constexpr auto operator|(View&& view, range_to_t<T>&& container)
+constexpr auto operator|(View&& view, range_to_t<T>&& container) -> T
 {
-    return T { view.begin(), view.end() };
+    return { view.begin(), view.end() };
 }
 
 template<typename T>

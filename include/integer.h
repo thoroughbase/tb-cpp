@@ -7,7 +7,7 @@ namespace tb
 {
 
 template<std::integral Integer>
-constexpr Integer reverse_endian(Integer x)
+constexpr auto reverse_endian(Integer x) -> Integer
 {
     Integer result = 0;
     for (size_t i = 0; i < sizeof(Integer); ++i) {
